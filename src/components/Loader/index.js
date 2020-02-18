@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Loader.css';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 const containerClass = {

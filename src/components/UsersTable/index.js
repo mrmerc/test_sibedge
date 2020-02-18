@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import './UsersTable.css';
 import Loader from '../Loader';
+import UserRow from './UserRow';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -38,14 +38,27 @@ const useStyles = makeStyles({
 	},
 });
 
-function UsersTable(props) {
-	const [loading, setLoading] = useState( true );
-	const [initData, setInitData] = useState( [] );
-	const [users, setUsers] = useState( [] );
-  const [page, setPage] = useState( 0 );
-  const [rowsPerPage, setRowsPerPage] = useState( 10 );
-	const [dateFrom, setDateFrom] = useState( new Date('1920-08-18T21:11:54') );
-	const [dateTo, setDateTo] = useState( Date.now() );
+function UsersTable() {
+	const MAX_ROWS_PER_PAGE = 10;
+	const FIRST_PAGE 				= 0;
+	const INIT_FILTER_STATE = {
+		lastName: '',
+		phone: '',
+		city: '',
+		dateFrom: new Date('1920-08-18T21:11:54'),
+		dateTo: Date.now()
+	}
+
+	const [loading, setLoading] 							= useState( true );
+	const [initUsersData, setInitUsersData]		= useState( [] );
+	const [usersData, setUsersData] 					= useState( [] );
+	const [filterLastName, setFilterLastName]	= useState( INIT_FILTER_STATE.lastName );
+	const [filterPhone, setFilterPhone]				= useState( INIT_FILTER_STATE.phone );
+	const [filterCity, setFilterCity]					= useState( INIT_FILTER_STATE.city );
+	const [filterDateFrom, setFilterDateFrom]	= useState( INIT_FILTER_STATE.dateFrom );
+	const [filterDateTo, setFilterDateTo]			= useState( INIT_FILTER_STATE.dateTo );
+  const [currentPage, setCurrentPage] 			= useState( FIRST_PAGE );
+  const [rowsPerPage, setRowsPerPage]				= useState( MAX_ROWS_PER_PAGE );
 
 	const classes = useStyles();
 
@@ -54,87 +67,69 @@ function UsersTable(props) {
 			method: 'GET',
 			headers: { 'Content-Type': 'application/json' }
 		})
-		.then(response => response.json())
-		.then(data => { setUsers(data.results); setInitData(data.results); setLoading(false) })
-		.catch(err => console.log(err));
+			.then(response => response.json())
+			.then(data => { 
+				setUsersData(data.results); 
+				setInitUsersData(data.results); 
+				setLoading(false);
+			})
+			.catch(err => console.log(err));
 	}, []);
 
-	const formatName = (name) => name.charAt(0).toUpperCase() + name.slice(1);
-	const formatAddress = (address) => Object.values(address).reverse().join(', ');
+	useEffect(() => {
+		const users = initUsersData
+			.filter(user => user.name.last.startsWith(filterLastName.toLowerCase()))
+			.filter(user => user.phone.startsWith(filterPhone.toLowerCase()))
+			.filter(user => user.location.city.startsWith(filterCity.toLowerCase()))
+			.filter(user => filterDateFrom.getTime() <= new Date(user.dob).getTime() &&
+				filterDateTo >= new Date(user.dob).getTime()
+			);
+		setUsersData(users);
+		setCurrentPage(FIRST_PAGE);
+	}, 
+		[
+			filterLastName, 
+			filterPhone, 
+			filterCity, 
+			filterDateFrom, 
+			filterDateTo
+		]
+	);
 
-	const tableRow = (user) => {
-		const uName = `${ formatName(user.name.first) } ${ formatName(user.name.last) }`;
-		const uAddress = formatAddress(user.location);
-		const uPhone = `Phone: ${ user.phone }, Cell: ${ user.cell }`;
+	const emptyRows = rowsPerPage - Math.min(rowsPerPage, usersData.length - currentPage * rowsPerPage);
 
-		return <TableRow key={ user.email }>
-			<TableCell component="th" scope="row" align="center">
-				<img src={ user.picture.thumbnail } alt="Avatar"/>
-			</TableCell>
-			<TableCell align="center">{ uName }</TableCell>
-			<TableCell align="center">{ uAddress }</TableCell>
-			<TableCell align="center">{ user.email }</TableCell>
-			<TableCell align="center">{ uPhone }</TableCell>
-			<TableCell align="center">{ user.dob }</TableCell>
-		</TableRow>
-	}
+	const handleChangePage = (e, newPage) => setCurrentPage(newPage);
 
-	const emptyRows = rowsPerPage - Math.min(rowsPerPage, users.length - page * rowsPerPage);
-
-	const handleChangePage = (event, newPage) => setPage(newPage);
-
-  const handleChangeRowsPerPage = event => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const handleChangeRowsPerPage = e => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setCurrentPage(FIRST_PAGE);
 	};
 
-	const filterByName = (e) => {
-		setUsers(users
-			.filter(user => user.name.last.startsWith(e.target.value.toLowerCase()))
-		);
-	}
+	const handleFilterLastName = e => setFilterLastName( e.target.value );
+	
+	const handleFilterPhone = e => setFilterPhone( e.target.value.replace(/(^[a-zA-Z]+$)/, '') ); 
+	
+	const handleFilterCity = e => setFilterCity( e.target.value );
 
-	const filterByPhone = (e) => {
-		const value = e.target.value;
-		if (! /(^[0-9()-]+$)/.test(value) ) return;
+	const handleFilterDateFrom = date => { 
+		if (date instanceof Date && !isNaN(date)) {
+			setFilterDateFrom( date ); 
+		} 
+	};
 
-		setUsers(users
-			.filter(user => user.phone.startsWith(value.toLowerCase()))
-		);
-	}
+	const handleFilterDateTo = date => { 
+		if (date instanceof Date && !isNaN(date)) {
+			setFilterDateTo( date ); 
+		} 
+	};
 
-	const filterByCity = (e) => {
-		setUsers(users
-			.filter(user => user.location.city.startsWith(e.target.value.toLowerCase()))
-		);
-	}
-
-	const filterByDate = (from, date) => {
-		if (!( date instanceof Date && !isNaN(date) )) return;
-
-		if (from) {
-			setUsers(users
-				.filter(user => date.getTime() <= new Date(user.dob).getTime() && dateTo >= new Date(user.dob).getTime())
-			);
-		} else {
-			setUsers(users
-				.filter(user => dateFrom <= new Date(user.dob).getTime() && date.getTime() >= new Date(user.dob).getTime())
-			);
-		}
-	}
-
-	const handleDateFromChange = (date) => {
-		setDateFrom(date.getTime());
-		filterByDate(true, date);
-	}
-
-	const handleDateToChange = (date) => {
-		setDateTo(date.getTime());
-		filterByDate(false, date);
-	}
-
-	const handleRestoreClick = (e) => {
-		setUsers(initData);
+	const handleRestoreClick = e => {
+		setUsersData(initUsersData);
+		setFilterLastName(INIT_FILTER_STATE.lastName);
+		setFilterPhone(INIT_FILTER_STATE.phone);
+		setFilterCity(INIT_FILTER_STATE.city);
+		setFilterDateFrom(INIT_FILTER_STATE.dateFrom);
+		setFilterDateTo(INIT_FILTER_STATE.dateTo);
 	}
 
 	return(
@@ -146,20 +141,23 @@ function UsersTable(props) {
 					id="filter-second-name" 
 					label="Фамилия" 
 					variant="outlined"
-					onInput={ filterByName } />
+					value={ filterLastName }
+					onInput={ handleFilterLastName } />
 				<TextField 
 					className={ classes.text } 
 					id="filter-phone" 
 					label="Телефон"
 					type="tel"
 					variant="outlined"
-					onInput={ filterByPhone } />
+					value={ filterPhone }
+					onInput={ handleFilterPhone } />
 				<TextField 
 					className={ classes.text } 
 					id="filter-city" 
 					label="Город"
 					variant="outlined"
-					onInput={ filterByCity } />
+					value={ filterCity }
+					onInput={ handleFilterCity } />
 			</Toolbar>
 			<Toolbar className={ classes.toolbar }>
 				<MuiPickersUtilsProvider utils={ DateFnsUtils }>
@@ -170,8 +168,8 @@ function UsersTable(props) {
 						margin="normal"
 						id="filter-date-from"
 						label="От"
-						value={ dateFrom }
-						onChange={ handleDateFromChange }
+						value={ filterDateFrom }
+						onChange={ handleFilterDateFrom }
 						KeyboardButtonProps={{
 							'aria-label': 'change from date',
 						}}
@@ -183,8 +181,8 @@ function UsersTable(props) {
 						margin="normal"
 						id="filter-date-to"
 						label="До"
-						value={ dateTo }
-						onChange={ handleDateToChange }
+						value={ filterDateTo }
+						onChange={ handleFilterDateTo }
 						KeyboardButtonProps={{
 							'aria-label': 'change to date',
 						}}
@@ -208,9 +206,9 @@ function UsersTable(props) {
 						</TableRow>
 					</TableHead>
 					<TableBody>
-						{ users
-							.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-							.map(user => tableRow(user))
+						{ usersData
+							.slice(currentPage * rowsPerPage, currentPage * rowsPerPage + rowsPerPage)
+							.map(user => <UserRow user={ user } key={ user.email } />)
 						}
 						{emptyRows > 0 && (
 							<TableRow style={{ height: 53 * emptyRows }}>
@@ -223,9 +221,9 @@ function UsersTable(props) {
 			<TablePagination
 				rowsPerPageOptions={ [10, 20, 30] }
 				component="div"
-				count={ users.length }
+				count={ usersData.length }
 				rowsPerPage={ rowsPerPage }
-				page={ page }
+				page={ currentPage }
 				onChangePage={ handleChangePage }
 				onChangeRowsPerPage={ handleChangeRowsPerPage }
 			/>
