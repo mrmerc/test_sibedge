@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Loader from '../Loader';
 import UserRow from './UserRow';
+import ErrorPage from '../ErrorPage';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -21,6 +22,9 @@ import {
 } from '@material-ui/pickers';
 
 const useStyles = makeStyles({
+	paper: {
+		position: 'relative'
+	},
   table: {
     minWidth: 650,
 	},
@@ -50,6 +54,7 @@ function UsersTable() {
 	}
 
 	const [loading, setLoading] 							= useState( true );
+	const [fetchError, setFetchError] 				= useState( {} );
 	const [initUsersData, setInitUsersData]		= useState( [] );
 	const [usersData, setUsersData] 					= useState( [] );
 	const [filterLastName, setFilterLastName]	= useState( INIT_FILTER_STATE.lastName );
@@ -67,13 +72,16 @@ function UsersTable() {
 			method: 'GET',
 			headers: { 'Content-Type': 'application/json' }
 		})
-			.then(response => response.json())
+			.then(response => {
+				if (!response.ok) { throw response }
+				return response.json();	
+			})
 			.then(data => { 
 				setUsersData(data.results); 
 				setInitUsersData(data.results); 
-				setLoading(false);
 			})
-			.catch(err => console.log(err));
+			.catch(err => setFetchError({ code: err.status, text: err.statusText }))
+			.finally(() => setLoading(false));
 	}, []);
 
 	useEffect(() => {
@@ -133,7 +141,10 @@ function UsersTable() {
 	}
 
 	return(
-		<Paper>
+		<Paper className={ classes.paper }>
+			{ fetchError && (
+				<ErrorPage error={ fetchError }/>
+			) }
 			<Loader isLoading={ loading } />
 			<Toolbar className={ classes.toolbar }>
 				<TextField 
