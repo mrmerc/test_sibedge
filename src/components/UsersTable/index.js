@@ -49,12 +49,12 @@ function UsersTable() {
 		lastName: '',
 		phone: '',
 		city: '',
-		dateFrom: new Date('1920-08-18T21:11:54'),
+		dateFrom: new Date('1920-08-18T21:11:54').getTime(),
 		dateTo: Date.now()
 	}
 
 	const [loading, setLoading] 							= useState( true );
-	const [fetchError, setFetchError] 				= useState( {} );
+	const [fetchError, setFetchError] 				= useState( null );
 	const [initUsersData, setInitUsersData]		= useState( [] );
 	const [usersData, setUsersData] 					= useState( [] );
 	const [filterLastName, setFilterLastName]	= useState( INIT_FILTER_STATE.lastName );
@@ -89,7 +89,7 @@ function UsersTable() {
 			.filter(user => user.name.last.startsWith(filterLastName.toLowerCase()))
 			.filter(user => user.phone.startsWith(filterPhone.toLowerCase()))
 			.filter(user => user.location.city.startsWith(filterCity.toLowerCase()))
-			.filter(user => filterDateFrom.getTime() <= new Date(user.dob).getTime() &&
+			.filter(user => filterDateFrom <= new Date(user.dob).getTime() &&
 				filterDateTo >= new Date(user.dob).getTime()
 			);
 		setUsersData(users);
