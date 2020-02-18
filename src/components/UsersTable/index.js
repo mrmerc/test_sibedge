@@ -25,11 +25,11 @@ const useStyles = makeStyles({
 	paper: {
 		position: 'relative'
 	},
-  table: {
-    minWidth: 650,
+	table: {
+		minWidth: 650,
 	},
 	container: {
-    maxHeight: 480,
+		maxHeight: 480,
 	},
 	toolbar: {
 		'& > *': {
@@ -53,17 +53,17 @@ function UsersTable() {
 		dateTo: Date.now()
 	}
 
-	const [loading, setLoading] 							= useState( true );
-	const [fetchError, setFetchError] 				= useState( null );
+	const [loading, setLoading]								= useState( true );
+	const [fetchError, setFetchError]					= useState( null );
 	const [initUsersData, setInitUsersData]		= useState( [] );
-	const [usersData, setUsersData] 					= useState( [] );
+	const [usersData, setUsersData]						= useState( [] );
 	const [filterLastName, setFilterLastName]	= useState( INIT_FILTER_STATE.lastName );
 	const [filterPhone, setFilterPhone]				= useState( INIT_FILTER_STATE.phone );
 	const [filterCity, setFilterCity]					= useState( INIT_FILTER_STATE.city );
 	const [filterDateFrom, setFilterDateFrom]	= useState( INIT_FILTER_STATE.dateFrom );
 	const [filterDateTo, setFilterDateTo]			= useState( INIT_FILTER_STATE.dateTo );
-  const [currentPage, setCurrentPage] 			= useState( FIRST_PAGE );
-  const [rowsPerPage, setRowsPerPage]				= useState( MAX_ROWS_PER_PAGE );
+	const [currentPage, setCurrentPage]				= useState( FIRST_PAGE );
+	const [rowsPerPage, setRowsPerPage]				= useState( MAX_ROWS_PER_PAGE );
 
 	const classes = useStyles();
 
@@ -108,9 +108,9 @@ function UsersTable() {
 
 	const handleChangePage = (e, newPage) => setCurrentPage(newPage);
 
-  const handleChangeRowsPerPage = e => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setCurrentPage(FIRST_PAGE);
+	const handleChangeRowsPerPage = e => {
+		setRowsPerPage(parseInt(e.target.value, 10));
+		setCurrentPage(FIRST_PAGE);
 	};
 
 	const handleFilterLastName = e => setFilterLastName( e.target.value );
